@@ -18,6 +18,7 @@ rs6809 の機械モデル（`src/machine.rs`、`src/m68k/tiny68k.rs`）が仕様
 - 6809：CamelForth → キットの SD イメージから NitrOS-9 Level 1 → BASIC09、`RUN test` で `42`。
 - 6809：rs6809 の Level 2 ディスク（`scripts/build-level2-disk.py`）から NitrOS-9 Level 2 → `mfree` が `$FFFFF`、空き 952k（rs6809 の `--ram-kb 1024` と同じ）。ゲスト上の Microware C で `cc1 hello.c` をコンパイルし、実行すると `Hello from C: 42`（`make test6809l2`）。
 - 68000：ブート ROM → 8MB 用に作った FUZIX 0.5 カーネル（`8192KiB total RAM, 8094KiB available to processes`）→ `login: root` でシェル。スロット 1 から CP/M-68K 1.3 → `A>`、`DIR`。
+- 68000：DUART チャンネル B の FUZIX 2 端末目（`/dev/tty2`）で `login: root`、`ps` がシェルを `tty2` に表示（`make test68k-tty2`）。
 - ICE：rs6809 の `--fpga tcp:...` をシミュレーションにつなぎ、コンソール、停止、ステップ、ハードウェアのブレークポイント、NitrOS-9 のプロセス表（`tests/ice_test.py`）。
 
 6809 の機械を GW2AR-18C にオープンソースのツールで配置配線した結果（`make check6809`。Yosys と nextpnr-himbaechel）：LUT4 8,151（39%）、FF 1,976（12%）、BSRAM 46 個中 7 個、32.4MHz のクロックに対し最大 39.6MHz。68000 の機械のこの確認には sv2v が要る（Yosys は fx68k を読めない）。MiSTeryNano はこの FPGA で Atari ST 一式と一緒に fx68k を 32MHz で動かしている。
@@ -57,7 +58,7 @@ sudo dd if=../rs6809/artifacts/level2/multicomp09-level2.img of=/dev/sdX bs=1M c
 
 ```sh
 # rs6809 側：8MB 用の FUZIX カーネルと、TPA が $800000 で終わる CP/M の BIOS
-sh scripts/build-fuzix-tiny68k.sh --tn20k        # artifacts/fuzix68k-tn20k/disk.img
+sh scripts/build-fuzix-tiny68k.sh --tn20k        # artifacts/fuzix68k-tn20k/disk.img（./setup.sh ならリリースから取得）
 python3 scripts/build-cpm68k-bios.py --tn20k     # examples/cpm68k/bios-tn20k.sr
 # こちら側
 python3 tools/mksd68k.py sd68k.img \
@@ -102,6 +103,7 @@ cd sim/build
 ./sim_mc09 -s ../../../rs6809/artifacts/nitros9/multicomp09_sd.img              # コンソールはこの端末
 ./sim_mc09 -s IMAGE -S ../../tests/nitros9-basic09.tsv -u " 42"                 # スクリプトで 42 まで
 ./sim_t68k -s sd68k.img -S ../../tests/fuzix-boot.tsv -u "Welcome to FUZIX"
+./sim_t68k -s sd68k.img -S ../../tests/fuzix-boot.tsv -B ../../tests/fuzix-tty2.tsv -V "tty2 "   # チャンネル B：-B でスクリプト、-V で停止、-T ポートで telnet
 ./sim_mc09 -s IMAGE -t 6820 &    # シリアルを TCP に：rs6809 --fpga tcp:127.0.0.1:6820 --ice
 ```
 

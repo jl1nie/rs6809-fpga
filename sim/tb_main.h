@@ -2,9 +2,11 @@
 // the Verilated model).
 //   -s IMAGE     SD card image (writes stay in memory; -w writes them back)
 //   -t PORT      serial port on TCP 127.0.0.1:PORT (for rs6809 --fpga)
-//   -S SCRIPT    console script: "wait for<TAB>send" lines
+//   -S SCRIPT    console script: "wait for<TAB>send" lines (# comments; \# for a prompt with #)
 //   -u TEXT      stop when the console shows TEXT
 //   -c CYCLES    stop after this many clocks
+// With a second serial port (HAS_UART_B: the 68000's DUART channel B):
+//   -B SCRIPT    its script, -V TEXT stop when it shows TEXT, -T PORT on TCP
 // GPL-3.0-or-later.
 #include <verilated.h>
 #include <csignal>
@@ -19,6 +21,7 @@ int main(int argc, char **argv) {
     const char *image = nullptr, *tcp = nullptr, *script = nullptr, *until = nullptr;
     bool persist = false;
     unsigned long long max_cycles = 0;
+    const char *b_script = nullptr, *b_until = nullptr, *b_tcp = nullptr;
     for (int i = 1; i < argc; i++) {
         std::string a = argv[i];
         if (a == "-s" && i + 1 < argc) image = argv[++i];
@@ -27,6 +30,9 @@ int main(int argc, char **argv) {
         else if (a == "-S" && i + 1 < argc) script = argv[++i];
         else if (a == "-u" && i + 1 < argc) until = argv[++i];
         else if (a == "-c" && i + 1 < argc) max_cycles = strtoull(argv[++i], nullptr, 0);
+        else if (a == "-B" && i + 1 < argc) b_script = argv[++i];
+        else if (a == "-V" && i + 1 < argc) b_until = argv[++i];
+        else if (a == "-T" && i + 1 < argc) b_tcp = argv[++i];
     }
     signal(SIGINT, on_sig);
     TOP *top = new TOP;
@@ -39,6 +45,16 @@ int main(int argc, char **argv) {
     if (until) host.until = until;
     if (!tcp && !script) host.stdin_raw();
     if (script) host.raw_console = false;
+#ifdef HAS_UART_B
+    Uart uart_b(UART_DIV_SIM);
+    Host host_b;
+    host_b.raw_console = false;            // never the terminal: a script or TCP
+    host_b.echo = stderr;                  // its output goes to stderr
+    if (b_tcp && !host_b.listen_tcp(b_tcp)) return 1;
+    if (b_script && !host_b.load_script(b_script)) return 1;
+    if (b_until) host_b.until = b_until;
+    top->uart_b_rx = 1;
+#endif
 
     top->clk = 0;
     top->por_n = 0;
@@ -64,6 +80,15 @@ int main(int argc, char **argv) {
         if (b >= 0) host.from_board((uint8_t)b);
         top->uart_rx = uart.line;
         if ((cyc & 1023) == 0) host.poll(uart, cyc);
+#ifdef HAS_UART_B
+        int bb = uart_b.tick(top->uart_b_tx);
+        if (bb >= 0) {
+            host_b.from_board((uint8_t)bb);
+        }
+        top->uart_b_rx = uart_b.line;
+        if ((cyc & 1023) == 0) host_b.poll(uart_b, cyc);
+        if (host_b.done) break;
+#endif
         cyc++;
         if (max_cycles && cyc >= max_cycles) break;
     }

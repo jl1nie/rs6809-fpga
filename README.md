@@ -18,6 +18,7 @@ Verified in simulation (Verilator, with models of the SDRAM and of an SD card in
 - 6809: CamelForth → NitrOS-9 Level 1 from the kit's SD image → BASIC09, `RUN test` prints `42`.
 - 6809: NitrOS-9 Level 2 from rs6809's Level 2 disk (`scripts/build-level2-disk.py`) → `mfree` shows `$FFFFF` and 952k free, the same as rs6809 with `--ram-kb 1024`; `cc1 hello.c` compiles with Microware C on the guest and the program prints `Hello from C: 42` (`make test6809l2`).
 - 68000: boot ROM → FUZIX 0.5 kernel built for 8 MiB (`8192KiB total RAM, 8094KiB available to processes`) → `login: root`, shell; CP/M-68K 1.3 from slot 1 → `A>`, `DIR`.
+- 68000: FUZIX's second terminal on DUART channel B (`/dev/tty2`): `login: root` there, and `ps` shows the shell on `tty2` (`make test68k-tty2`).
 - ICE: rs6809 `--fpga tcp:...` against the simulation: console, stop, step, breakpoint in hardware, NitrOS-9 process table (6809) — see `tests/ice_test.py`.
 
 Open-source place and route of the 6809 machine for the GW2AR-18C (`make check6809`; Yosys and nextpnr-himbaechel): 8,151 LUT4 (39%), 1,976 flip-flops (12%), 7 of 46 block RAMs, maximum 39.6 MHz for the 32.4 MHz clock. The 68000 machine needs sv2v for that check (Yosys cannot read fx68k); MiSTeryNano runs fx68k on this FPGA at 32 MHz with a whole Atari ST around it.
@@ -68,7 +69,7 @@ Both boot from the same ROM: type `NITROS9` at CamelForth.
 
 ```sh
 # in rs6809: the FUZIX kernel for 8 MiB, and the CP/M BIOS whose TPA ends at $800000
-sh scripts/build-fuzix-tiny68k.sh --tn20k        # artifacts/fuzix68k-tn20k/disk.img
+sh scripts/build-fuzix-tiny68k.sh --tn20k        # artifacts/fuzix68k-tn20k/disk.img (./setup.sh fetches it from the release)
 python3 scripts/build-cpm68k-bios.py --tn20k     # examples/cpm68k/bios-tn20k.sr
 # here
 python3 tools/mksd68k.py sd68k.img \
@@ -113,6 +114,7 @@ cd sim/build
 ./sim_mc09 -s ../../../rs6809/artifacts/nitros9/multicomp09_sd.img              # console on this terminal
 ./sim_mc09 -s IMAGE -S ../../tests/nitros9-basic09.tsv -u " 42"                 # scripted, stops at 42
 ./sim_t68k -s sd68k.img -S ../../tests/fuzix-boot.tsv -u "Welcome to FUZIX"
+./sim_t68k -s sd68k.img -S ../../tests/fuzix-boot.tsv -B ../../tests/fuzix-tty2.tsv -V "tty2 "   # channel B: script -B, stop at -V, or -T PORT for telnet
 ./sim_mc09 -s IMAGE -t 6820 &    # serial port on TCP: rs6809 --fpga tcp:127.0.0.1:6820 --ice
 python3 ../../tests/ice_test.py 6809 ./sim_mc09 IMAGE ../../../rs6809/target/release/rs6809 --script ../../tests/nitros9-boot.tsv
 ```
