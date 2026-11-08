@@ -19,6 +19,8 @@ Verified in simulation (Verilator, with models of the SDRAM and of an SD card in
 - 68000: boot ROM → FUZIX 0.5 kernel built for 8 MiB (`8192KiB total RAM, 8094KiB available to processes`) → `login: root`, shell; CP/M-68K 1.3 from slot 1 → `A>`, `DIR`.
 - ICE: rs6809 `--fpga tcp:...` against the simulation: console, stop, step, breakpoint in hardware, NitrOS-9 process table (6809) — see `tests/ice_test.py`.
 
+Open-source place and route of the 6809 machine for the GW2AR-18C (`make check6809`; Yosys and nextpnr-himbaechel): 8,151 LUT4 (39%), 1,976 flip-flops (12%), 7 of 46 block RAMs, maximum 39.6 MHz for the 32.4 MHz clock. The 68000 machine needs sv2v for that check (Yosys cannot read fx68k); MiSTeryNano runs fx68k on this FPGA at 32 MHz with a whole Atari ST around it.
+
 Not yet run on the board: the bitstreams have not been built with Gowin EDA here, and nothing has been tried on a Tang Nano 20K. Expect to check the SDRAM read timing, the BL616 serial pins (69 out, 70 in) and timing closure first (see "First run on the board").
 
 ## Layout

@@ -4,7 +4,8 @@
 # resources and the timing without Gowin EDA. The bitstream for the board
 # is made with Gowin EDA (m6809/build.tcl, m68k/build.tcl).
 # Uses yowasp-yosys and yowasp-nextpnr-himbaechel-gowin (pip install
-# yowasp-yosys yowasp-nextpnr-himbaechel-gowin), and GHDL for cpu09p.
+# yowasp-yosys yowasp-nextpnr-himbaechel-gowin), GHDL for cpu09p and sv2v
+# for fx68k.
 set -eu
 cd "$(dirname "$0")/.."
 R=$PWD
@@ -26,7 +27,11 @@ case $M in
 	mkdir -p "$OUT/rom"
 	cp m68k/rom/*.hex "$OUT/rom/"
 	cp m68k/fx68k/*.mem "$OUT/"
-	SRC="-sv $R/m68k/fx68k/fx68k.sv $R/m68k/fx68k/fx68kAlu.sv $R/m68k/fx68k/uaddrPla.sv $R/m68k/t68k_soc.v $R/m68k/duart.v $R/m68k/ide_sd.v $R/m68k/dbg68k.v $R/m68k/tn20k_top.v"
+	# Yosys cannot read fx68k's SystemVerilog (unpacked structs): sv2v
+	# (https://github.com/zachjs/sv2v) turns it into Verilog first.
+	command -v sv2v >/dev/null || { echo "the 68000 check needs sv2v on PATH (or use Gowin EDA: gw_sh m68k/build.tcl)" >&2; exit 1; }
+	sv2v "$R/m68k/fx68k/fx68k.sv" "$R/m68k/fx68k/fx68kAlu.sv" "$R/m68k/fx68k/uaddrPla.sv" > "$OUT/fx68k.v"
+	SRC="$R/$OUT/fx68k.v $R/m68k/t68k_soc.v $R/m68k/duart.v $R/m68k/ide_sd.v $R/m68k/dbg68k.v $R/m68k/tn20k_top.v"
 	CST=m68k/tn20k_68k.cst
 	;;
 *) echo "usage: $0 6809|68k" >&2; exit 1 ;;

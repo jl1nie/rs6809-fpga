@@ -19,6 +19,8 @@ rs6809 の機械モデル（`src/machine.rs`、`src/m68k/tiny68k.rs`）が仕様
 - 68000：ブート ROM → 8MB 用に作った FUZIX 0.5 カーネル（`8192KiB total RAM, 8094KiB available to processes`）→ `login: root` でシェル。スロット 1 から CP/M-68K 1.3 → `A>`、`DIR`。
 - ICE：rs6809 の `--fpga tcp:...` をシミュレーションにつなぎ、コンソール、停止、ステップ、ハードウェアのブレークポイント、NitrOS-9 のプロセス表（`tests/ice_test.py`）。
 
+6809 の機械を GW2AR-18C にオープンソースのツールで配置配線した結果（`make check6809`。Yosys と nextpnr-himbaechel）：LUT4 8,151（39%）、FF 1,976（12%）、BSRAM 46 個中 7 個、32.4MHz のクロックに対し最大 39.6MHz。68000 の機械のこの確認には sv2v が要る（Yosys は fx68k を読めない）。MiSTeryNano はこの FPGA で Atari ST 一式と一緒に fx68k を 32MHz で動かしている。
+
 実機ではまだ動かしていない：ここでは Gowin EDA でのビットストリーム生成をしておらず、Tang Nano 20K でも試していない。最初に確かめるのは SDRAM の読み出しタイミング、BL616 のシリアルのピン（出力 69、入力 70）、タイミング収束（「実機での最初の確認」）。
 
 ## ビルド
