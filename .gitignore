@@ -1,0 +1,10 @@
+build/
+sim/build/
+impl/
+# the NitrOS-9 kit's ROM is not redistributed: make rom6809 ROM=...
+m6809/rom6809.hex
+m68k/rom/*.o
+m68k/rom/*.elf
+m68k/rom/*.bin
+*.img
+__pycache__/

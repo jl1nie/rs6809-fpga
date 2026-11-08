@@ -1,0 +1,44 @@
+// Tang Nano 20K pins shared by both machines. The SDRAM in the package
+// needs no constraints: its ports are named O_sdram_* and IO_sdram_dq.
+IO_LOC "clk_27m" 4;
+IO_PORT "clk_27m" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+
+// BL616 USB serial: 69 FPGA output (to the PC), 70 FPGA input
+IO_LOC "uart_tx" 69;
+IO_PORT "uart_tx" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8;
+IO_LOC "uart_rx" 70;
+IO_PORT "uart_rx" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+
+// buttons S1 (88) and S2 (87), high when pressed
+IO_LOC "btn_s1" 88;
+IO_PORT "btn_s1" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+IO_LOC "btn_s2" 87;
+IO_PORT "btn_s2" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+// six LEDs, low = on
+IO_LOC "leds_n[0]" 15;
+IO_LOC "leds_n[1]" 16;
+IO_LOC "leds_n[2]" 17;
+IO_LOC "leds_n[3]" 18;
+IO_LOC "leds_n[4]" 19;
+IO_LOC "leds_n[5]" 20;
+IO_PORT "leds_n[0]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_PORT "leds_n[1]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_PORT "leds_n[2]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_PORT "leds_n[3]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_PORT "leds_n[4]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+IO_PORT "leds_n[5]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8;
+
+// microSD, native 4-bit
+IO_LOC "sd_clk" 83;
+IO_PORT "sd_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "sd_cmd" 82;
+IO_PORT "sd_cmd" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "sd_dat[0]" 84;
+IO_LOC "sd_dat[1]" 85;
+IO_LOC "sd_dat[2]" 80;
+IO_LOC "sd_dat[3]" 81;
+IO_PORT "sd_dat[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_PORT "sd_dat[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_PORT "sd_dat[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_PORT "sd_dat[3]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
