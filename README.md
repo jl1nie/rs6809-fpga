@@ -6,7 +6,7 @@ The machines of [rs6809](https://github.com/jl1nie/rs6809) on a Sipeed Tang Nano
 
 | Machine | CPU | Memory | Devices | Software |
 |---|---|---|---|---|
-| Multicomp09-compatible | cpu09p (6809), with debug ports | 8 KiB boot ROM, 1 MiB RAM in the SDRAM behind the Multicomp MMU | 6850 ACIA (console), SD controller, 50 Hz timer | NitrOS-9 Level 1 from the SD card (Level 2: the MMU and 1 MiB are there, not yet tried) |
+| Multicomp09-compatible | cpu09p (6809), with debug ports | 8 KiB boot ROM, 1 MiB RAM in the SDRAM behind the Multicomp MMU | 6850 ACIA (console), SD controller, 50 Hz timer | NitrOS-9 Level 1 and Level 2 (1 MiB) from the SD card |
 | Tiny68K-compatible | fx68k (68000), 8 MHz | 8 MiB RAM in the SDRAM, boot ROM at `$FF0000` | MC68681 DUART (console, second port on GPIO), IDE registers on the SD card | FUZIX 0.5 (kernel built for 8 MiB), CP/M-68K 1.3 |
 
 rs6809's machine models are the specification (`src/machine.rs`, `src/m68k/tiny68k.rs`); the hardware follows them. The plan is in [docs/PLAN.md](docs/PLAN.md) (Japanese), the register tables in [docs/spec-6809.md](docs/spec-6809.md) and [docs/spec-68k.md](docs/spec-68k.md).
@@ -16,6 +16,7 @@ rs6809's machine models are the specification (`src/machine.rs`, `src/m68k/tiny6
 Verified in simulation (Verilator, with models of the SDRAM and of an SD card in 4-bit mode, running the same RTL as the bitstream):
 
 - 6809: CamelForth → NitrOS-9 Level 1 from the kit's SD image → BASIC09, `RUN test` prints `42`.
+- 6809: NitrOS-9 Level 2 from rs6809's Level 2 disk (`scripts/build-level2-disk.py`) → `mfree` shows `$FFFFF` and 952k free, the same as rs6809 with `--ram-kb 1024`; `cc1 hello.c` compiles with Microware C on the guest and the program prints `Hello from C: 42` (`make test6809l2`).
 - 68000: boot ROM → FUZIX 0.5 kernel built for 8 MiB (`8192KiB total RAM, 8094KiB available to processes`) → `login: root`, shell; CP/M-68K 1.3 from slot 1 → `A>`, `DIR`.
 - ICE: rs6809 `--fpga tcp:...` against the simulation: console, stop, step, breakpoint in hardware, NitrOS-9 process table (6809) — see `tests/ice_test.py`.
 
@@ -54,11 +55,14 @@ openFPGALoader -b tangnano20k impl/pnr/rs6809fpga_6809.fs        # SRAM (or -f f
 
 ## SD cards
 
-6809: write the NitrOS-9 image from sector 0, as rs6809 uses it:
+6809: write the NitrOS-9 image from sector 0, as rs6809 uses it (Level 1 from the kit, or the Level 2 disk built in rs6809 with `python3 scripts/build-level2-disk.py`):
 
 ```sh
-sudo dd if=../rs6809/artifacts/nitros9/multicomp09_sd.img of=/dev/sdX bs=1M conv=fsync
+sudo dd if=../rs6809/artifacts/nitros9/multicomp09_sd.img of=/dev/sdX bs=1M conv=fsync     # Level 1
+sudo dd if=../rs6809/artifacts/level2/multicomp09-level2.img of=/dev/sdX bs=1M conv=fsync  # Level 2
 ```
+
+Both boot from the same ROM: type `NITROS9` at CamelForth.
 
 68000: the card has four slots of 512 MiB; the boot ROM asks which one (default 0 after 2 s). `tools/mksd68k.py` builds the image:
 
