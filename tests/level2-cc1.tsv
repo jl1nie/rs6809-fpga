@@ -1,0 +1,4 @@
+CamelForth	NITROS9
+OS9:	chd /dd/SOURCES
+OS9:	cc1 hello.c -f=/dd/SOURCES/hello
+OS9:	/dd/SOURCES/hello

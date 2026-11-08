@@ -6,7 +6,7 @@
 
 | 機械 | CPU | メモリ | 装置 | ソフト |
 |---|---|---|---|---|
-| Multicomp09 互換 | cpu09p（6809、デバッグ用ポート付き） | ブート ROM 8KB、Multicomp MMU の先に SDRAM の RAM 1MB | 6850 ACIA（コンソール）、SD 制御、50Hz タイマー | SD カードから NitrOS-9 Level 1（Level 2 は MMU と 1MB はあるが未確認） |
+| Multicomp09 互換 | cpu09p（6809、デバッグ用ポート付き） | ブート ROM 8KB、Multicomp MMU の先に SDRAM の RAM 1MB | 6850 ACIA（コンソール）、SD 制御、50Hz タイマー | SD カードから NitrOS-9 Level 1 と Level 2（1MB） |
 | Tiny68K 互換 | fx68k（68000）、8MHz | SDRAM の RAM 8MB、ブート ROM `$FF0000` | MC68681 DUART（コンソール、GPIO に 2 本目）、SD カード上の IDE レジスタ | FUZIX 0.5（8MB 用に作ったカーネル）、CP/M-68K 1.3 |
 
 rs6809 の機械モデル（`src/machine.rs`、`src/m68k/tiny68k.rs`）が仕様で、ハードウェアがそれに合わせる。計画は [docs/PLAN.md](../PLAN.md)、レジスタ表は [spec-6809.md](../spec-6809.md)、[spec-68k.md](../spec-68k.md)（英語）。
@@ -16,6 +16,7 @@ rs6809 の機械モデル（`src/machine.rs`、`src/m68k/tiny68k.rs`）が仕様
 シミュレーション（Verilator。SDRAM と 4 ビットモードの SD カードのモデルを付け、ビットストリームと同じ RTL を動かす）で確認済み：
 
 - 6809：CamelForth → キットの SD イメージから NitrOS-9 Level 1 → BASIC09、`RUN test` で `42`。
+- 6809：rs6809 の Level 2 ディスク（`scripts/build-level2-disk.py`）から NitrOS-9 Level 2 → `mfree` が `$FFFFF`、空き 952k（rs6809 の `--ram-kb 1024` と同じ）。ゲスト上の Microware C で `cc1 hello.c` をコンパイルし、実行すると `Hello from C: 42`（`make test6809l2`）。
 - 68000：ブート ROM → 8MB 用に作った FUZIX 0.5 カーネル（`8192KiB total RAM, 8094KiB available to processes`）→ `login: root` でシェル。スロット 1 から CP/M-68K 1.3 → `A>`、`DIR`。
 - ICE：rs6809 の `--fpga tcp:...` をシミュレーションにつなぎ、コンソール、停止、ステップ、ハードウェアのブレークポイント、NitrOS-9 のプロセス表（`tests/ice_test.py`）。
 
@@ -43,11 +44,14 @@ openFPGALoader -b tangnano20k impl/pnr/rs6809fpga_6809.fs        # SRAM へ（-f
 
 ## SD カード
 
-6809：NitrOS-9 のイメージを LBA 0 から書く（rs6809 と同じイメージ）。
+6809：NitrOS-9 のイメージを LBA 0 から書く（rs6809 と同じイメージ。Level 1 はキットのもの、Level 2 は rs6809 で `python3 scripts/build-level2-disk.py` で作ったもの）。
 
 ```sh
-sudo dd if=../rs6809/artifacts/nitros9/multicomp09_sd.img of=/dev/sdX bs=1M conv=fsync
+sudo dd if=../rs6809/artifacts/nitros9/multicomp09_sd.img of=/dev/sdX bs=1M conv=fsync     # Level 1
+sudo dd if=../rs6809/artifacts/level2/multicomp09-level2.img of=/dev/sdX bs=1M conv=fsync  # Level 2
 ```
+
+どちらも同じ ROM から起動する（CamelForth で `NITROS9`）。
 
 68000：カードは 512MB ずつ 4 スロット。ブート ROM がスロットを聞く（2 秒で既定の 0）。`tools/mksd68k.py` でイメージを作る。
 
