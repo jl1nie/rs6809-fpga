@@ -70,6 +70,7 @@ struct Host {
     struct termios saved;
     bool term_saved = false;
     bool dle = false;
+    FILE *echo = stdout;   // where the console output is shown
     std::deque<uint8_t> pending;
     std::vector<uint8_t> early;
     uint64_t next_key = 0, key_gap = 40000;
@@ -109,8 +110,7 @@ struct Host {
         }
         if (b == 0x10 && !dle) { dle = true; return; }   // DLE DLE: one console 0x10
         dle = false;
-        fputc(b, stdout);
-        fflush(stdout);
+        if (echo) { fputc(b, echo); fflush(echo); }
         seen.push_back((char)b);
         if (seen.size() > 8192) seen.erase(0, 4096);
         if (!until.empty() && seen.find(until) != std::string::npos) done = true;
@@ -169,6 +169,7 @@ struct Host {
             std::string s(line);
             while (!s.empty() && (s.back() == '\n' || s.back() == '\r')) s.pop_back();
             if (s.empty() || s[0] == '#') continue;
+            if (s.size() > 1 && s[0] == '\\' && s[1] == '#') s.erase(0, 1);   // \# : a prompt with #
             size_t tab = s.find('\t');
             if (tab == std::string::npos) script.push_back({s, ""});
             else script.push_back({s.substr(0, tab), s.substr(tab + 1)});
